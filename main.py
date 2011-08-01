@@ -59,6 +59,8 @@ class HelloFS(Fuse):
             st.st_mode = stat.S_IFREG | 0444
             st.st_nlink = 1
             image_num = int(fn_match.group(1))
+            if image_num > 314:
+                return -errno.ENOENT
             image = get_image(image_num)
             st.st_size = len(image)
         else:
@@ -66,7 +68,7 @@ class HelloFS(Fuse):
         return st
 
     def readdir(self, path, offset):
-        for r in  '.', '..', "image_0.png":
+        for r in  '.', '..', "image_0.png", "image_1.png", "image_2.png":
             yield fuse.Direntry(r)
 
     def open(self, path, flags):
