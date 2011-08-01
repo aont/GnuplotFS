@@ -23,17 +23,12 @@ if not hasattr(fuse, '__version__'):
 
 fuse.fuse_python_api = (0, 2)
 
-
-
-hello_path = '/hello.png'
-hello_str = ''
-
-if True:
+def get_image(num):
     gp = subprocess.Popen("/opt/local/bin/gnuplot", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     gp.stdin.write("set terminal png\n")
-    gp.stdin.write("plot x\n")
+    gp.stdin.write("plot sin(x+%s)\n" % (num*0.1))
     gp.stdin.write("exit\n")
-    hello_str = gp.stdout.read()
+    return gp.stdout.read()
 
 class MyStat(fuse.Stat):
     def __init__(self):
@@ -48,47 +43,60 @@ class MyStat(fuse.Stat):
         self.st_mtime = 0
         self.st_ctime = 0
 
-class HelloFS(Fuse):
 
+import re
+fn_re = re.compile("/image_(\d+)\.png")
+
+
+class HelloFS(Fuse):
     def getattr(self, path):
+        fn_match = fn_re.match(path)
         st = MyStat()
         if path == '/':
             st.st_mode = stat.S_IFDIR | 0755
             st.st_nlink = 2
-        elif path == hello_path:
+        elif not fn_match == None:
             st.st_mode = stat.S_IFREG | 0444
             st.st_nlink = 1
-            st.st_size = len(hello_str)
+            image_num = int(fn_match.group(1))
+            image = get_image(image_num)
+            st.st_size = len(image)
         else:
             return -errno.ENOENT
         return st
 
     def readdir(self, path, offset):
-        for r in  '.', '..', hello_path[1:]:
+        for r in  '.', '..', "image_0.png":
             yield fuse.Direntry(r)
 
     def open(self, path, flags):
-        if path != hello_path:
+        print "open:\t%s" % path
+        fn_match = fn_re.match(path)
+        if fn_match == None:
             return -errno.ENOENT
         accmode = os.O_RDONLY | os.O_WRONLY | os.O_RDWR
         if (flags & accmode) != os.O_RDONLY:
             return -errno.EACCES
 
     def read(self, path, size, offset):
-        if path != hello_path:
+        fn_match = fn_re.match(path)
+        if fn_match == None:
             return -errno.ENOENT
-        slen = len(hello_str)
+
+        image_num = int(fn_match.group(1))
+        image = get_image(image_num)        
+        slen = len(image)
         if offset < slen:
             if offset + size > slen:
                 size = slen - offset
-            buf = hello_str[offset:offset+size]
+            buf = image[offset:offset+size]
         else:
             buf = ''
         return buf
 
 def main():
     usage="""
-Userspace hello example
+processfs usage
 
 """ + Fuse.fusage
     server = HelloFS(version="%prog " + fuse.__version__,
