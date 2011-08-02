@@ -46,7 +46,7 @@ class GPImage:
         gp.stdin.write("exit\n")
         self.data = gp.stdout.read()
     
-class ExeFS(Fuse):
+class GnuplotFS(Fuse):
     import re
     fn_re = re.compile("/image_(\d+)\.png")
 
@@ -56,7 +56,6 @@ class ExeFS(Fuse):
         
     def getattr(self, path):
         print "getattr:\t%s" % path        
-        #fn_match = ExeFS.fn_re.match(path)
         fn_match = self.__class__.fn_re.match(path)
         st = fuse.Stat()
         if path == '/':
@@ -125,7 +124,7 @@ class ExeFS(Fuse):
 
 
 def main():
-    server = ExeFS(version="exefs " + fuse.__version__)
+    server = GnuplotFS(version="gnuplotfs " + fuse.__version__)
     server.parse(errex=1)
     server.main()
 
