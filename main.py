@@ -40,7 +40,7 @@ image_list = ImageList()
 class GPImage:
     def __init__(self, num):
         self.num = num
-        gp = subprocess.Popen("/opt/local/bin/gnuplot", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        gp = subprocess.Popen("gnuplot", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         gp.stdin.write("set terminal png\n")
         gp.stdin.write("plot sin(x+%s)\n" % (num*0.1))
         gp.stdin.write("exit\n")
