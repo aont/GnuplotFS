@@ -63,15 +63,16 @@ class GnuplotFS(Fuse):
             st.st_nlink = 2
         elif not fn_match == None:
             image_num = int(fn_match.group(1))
-            if image_num > 314:
+            if image_num > 315:
                 return -errno.ENOENT
 
             st.st_mode = stat.S_IFREG | 0444
             st.st_nlink = 1
 
-            gpimage = image_list.get_image(image_num)
-            st.st_size = len(gpimage.data)
-            
+            #gpimage = GPImage(image_num)
+            st.st_size = 1024*1024*1024 # len(gpimage.data)
+            #del gpimage
+
         else:
             return -errno.ENOENT
         return st
@@ -89,6 +90,10 @@ class GnuplotFS(Fuse):
         accmode = os.O_RDONLY | os.O_WRONLY | os.O_RDWR
         if (flags & accmode) != os.O_RDONLY:
             return -errno.EACCES
+
+        ffi = fuse.FuseFileInfo()
+        ffi.direct_io = True
+        return ffi
 
     def read(self, path, size, offset):
         print "read:\t%s" % path
@@ -116,12 +121,6 @@ class GnuplotFS(Fuse):
             image_num = int(fn_match.group(1))
             image_list.del_image(image_num)
             return -errno.ENOSYS
-
-
-
-    usage = Fuse.fusage
-
-
 
 def main():
     server = GnuplotFS(version="gnuplotfs " + fuse.__version__)
